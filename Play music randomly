@@ -1,0 +1,153 @@
+# -*- conding: utf-8 -*-
+
+"""
+
+    フォルダ内の音楽ファイルをランダムに再生する
+
+ 
+
+    全ての曲が全て再生されるまで、同じ曲が再生されることはないバージョン
+
+         
+
+"""
+
+import os, sys
+import random
+
+ 
+
+# 参照ディレクトリ
+music_pass = "/home/pi2/music/"
+
+file_pass = "/home/pi2/python/"
+
+ 
+
+# 再生する曲のファイル名
+play_no = ""
+
+ 
+# シャッフルした曲名を保存しておくファイル
+DATA_FILE = "playNext.dat"
+
+ 
+
+# --- フォルダ内の曲を順番を変えてシャッフルしたデータファイルを生成する関数
+def new_datafile():
+
+    # データファイルを準備（書き込みモード）
+    datafile = open(file_pass + DATA_FILE, "w", encoding="utf-8")
+
+    print("データファイル新規作成")
+
+
+    # フォルダのファイル数取得
+    files = os.listdir(music_pass)
+
+    music_count = len(files)
+
+    print("ファイル数: {0}".format(music_count))
+
+     
+
+    # ファイルの先頭行に再生曲の番号とファイル総数を保存
+    datafile.write("1,{0}\n".format(str(music_count)))
+
+     
+    #シャッフル
+    r = random
+
+    r.seed()
+
+     
+    for i in range(1000):
+    
+        r1 = r.randint(0, music_count - 1)
+
+        r2 = r.randint(0, music_count - 1)
+
+         
+        work = files[r1]
+
+        files[r1] = files[r2]
+
+        files[r2] = work
+
+         
+
+    # 音楽ファイル名をデータファイルに書き込む
+    for file in files:
+
+        datafile.write(file + "\n")
+
+     
+
+    # データファイルを閉じる
+    datafile.close()
+    
+
+ 
+
+# データファイルが存在しないなら新規作成
+if not os.path.exists(file_pass + DATA_FILE):
+
+    new_datafile()
+
+ 
+
+# データファイルを読み込む
+datafile = open(file_pass + DATA_FILE, "r", encoding="utf-8")
+
+lines = datafile.readlines()
+
+datafile.close()
+
+ 
+
+# フォルダのファイル数取得
+music_data = lines[0].split(",")
+
+music_count = int(music_data[0])
+
+music_total = int(music_data[1])
+
+print("再生曲: " + str(music_count))  
+
+print("トータル: " + str(music_total)) 
+
+ 
+
+# 再生曲を設定
+play_no = lines[music_count].rstrip("\n")   # 末尾の改行を取り除く
+
+ 
+
+# 次の曲へ
+music_count += 1
+
+lines[0] = str(music_count) + "," + str(music_total) + "\n"
+
+ 
+
+# データファイル更新
+datafile = open(file_pass + DATA_FILE, "w", encoding="utf-8")
+
+datafile.writelines(lines)
+
+datafile.close()
+
+ 
+
+# フォルダの曲を全て再生し終えたらデータファイル再生成
+if music_count > music_total:
+
+    new_datafile()
+
+ 
+# 曲を再生する
+cmd = "omxplayer -o local " + music_pass + "'" + play_no + "'"
+
+print(cmd)
+
+result = os.popen(cmd).readline().strip()
